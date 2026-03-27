@@ -366,6 +366,19 @@ class PoseServer:
                                     )
                                     conn.execute(stmt)
                                     conn.commit()
+                                    # ── Mirror same row to Team 3's Neon DB ──
+                                    row = dict(
+                                        session_id=client_state.get("session_id", 1),
+                                        frame_id=int(timestamp_ms),
+                                        camera_angle=camera_angle,
+                                        angle_data=angle_data,
+                                        confidence_data=confidence_data,
+                                        is_calibrated=is_calibrated,
+                                        fps_at_frame=30.0,
+                                        timestamp_iso=iso_str,
+                                        timestamp_ms=timestamp_ms
+                                    )
+                                    database.mirror_to_team3(row)
                                     # print(f"💾 Raw angles saved to DB: {camera_angle}")
                             except Exception as e:
                                 print(f"❌ DB Insert Error: {e}")
