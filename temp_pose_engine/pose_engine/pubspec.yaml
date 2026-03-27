@@ -1,0 +1,64 @@
+name: pose_engine
+description: Real-time Pose Detection Engine for Posture Correction App
+
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Camera packages
+  camera: ^0.10.5
+  camera_windows: ^0.2.1
+
+  # State management
+  provider: ^6.1.1
+
+  # WebSocket for Python MediaPipe backend communication
+  web_socket_channel: ^2.4.0
+
+  # Material icons
+  cupertino_icons: ^1.0.2
+
+  # For local storage (calibration persistence)
+  # shared_preferences: ^2.2.2
+
+  # ==========================================================
+  # MOBILE DEPLOYMENT: Uncomment the following for Android/iOS
+  # ==========================================================
+  # google_mlkit_pose_detection: ^0.11.0
+  # google_mlkit_commons: ^0.5.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^2.0.0
+
+flutter:
+  uses-material-design: true
+
+# ==========================================================
+# MOBILE DEPLOYMENT NOTES:
+# ==========================================================
+# 
+# Android (android/app/build.gradle):
+#   defaultConfig {
+#     minSdkVersion 21
+#     ndk {
+#       abiFilters 'armeabi-v7a', 'arm64-v8a'
+#     }
+#   }
+#
+# iOS (ios/Podfile):
+#   platform :ios, '12.0'
+#   
+#   post_install do |installer|
+#     installer.pods_project.build_configurations.each do |config|
+#       config.build_settings["EXCLUDED_ARCHS[sdk=iphonesimulator*]"] = "arm64"
+#     end
+#   end
+# ==========================================================

@@ -1,0 +1,24 @@
+==========================================
+      POSE ENGINE - RUN INSTRUCTIONS
+==========================================
+
+Welcome! Follow these simple steps to run the application.
+
+1.  First Time Setup (Run Once):
+    ---------------------------
+    Double-click `setup.bat`.
+    - This will install the necessary Python and Flutter libraries.
+    - Wait for it to say "Setup Complete!".
+
+2.  Run the App:
+    ------------
+    Double-click `run.bat`.
+    - This will open a backend server window (don't close it!).
+    - Then it will launch the Pose Engine application.
+
+3.  Closing:
+    --------
+    - Close the application window.
+    - Close the black backend server window.
+
+Enjoy!

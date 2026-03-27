@@ -1,0 +1,306 @@
+============================================================
+  POSTURE COACH APP — FRONTEND INTEGRATION GUIDE
+  For: Team 1 (Posture Detection) & Team 2 (Pain Risk Analysis)
+  Last Updated: 21 March 2026
+============================================================
+
+------------------------------------------------------------
+  ⚠️  GETTING "JSON Parse error" or "Sign Up/In Failed"?
+------------------------------------------------------------
+
+This means the backend server is not reachable from your device.
+The NGROK_URL in the app points to a tunnel that only works when
+the backend owner (Neha) has their server and ngrok running.
+
+  OPTION A — You have the backend code (recommended):
+  ─────────────────────────────────────────────────────
+  1. Go to the backend folder:
+       cd posture-coach-team-copy/backend
+  2. Activate virtual environment:
+       Windows:  venv\Scripts\activate
+       Mac/Linux: source venv/bin/activate
+  3. Install dependencies (first time only):
+       pip install -r requirements.txt
+  4. Start the server:
+       uvicorn app.main:app --port 8001 --reload
+  5. Start ngrok (in a SEPARATE terminal):
+       ngrok http 8001
+  6. Copy the ngrok HTTPS URL (e.g. https://abc123.ngrok-free.app)
+  7. Open: frontend/services/backendService.ts
+     Change line 19 to:
+       const NGROK_URL = 'https://abc123.ngrok-free.app';
+  8. Save and reload the Expo app — it should work now!
+
+  OPTION B — You don't have / don't need the backend:
+  ─────────────────────────────────────────────────────
+  In frontend/services/backendService.ts, change line 19 to:
+    const NGROK_URL = '';   ← empty string = MOCK MODE
+  The app will run fully with fake/local data (no real DB).
+
+------------------------------------------------------------
+
+This document explains the structure and purpose of every folder and
+file in the frontend/ directory so your team can integrate smoothly.
+
+
+------------------------------------------------------------
+  TECH STACK
+------------------------------------------------------------
+- Framework  : React Native (Expo SDK 51, TypeScript)
+- Navigation : Expo Router (file-based routing)
+- State      : Zustand (userStore.ts)
+- Backend    : FastAPI (Python) via ngrok tunnel
+- Database   : Neon PostgreSQL (hosted)
+- Camera     : expo-camera
+
+
+------------------------------------------------------------
+  HOW TO RUN
+------------------------------------------------------------
+1. Install dependencies:
+     cd frontend
+     npm install
+
+2. Start the app:
+     npx expo start
+
+3. Scan the QR code in Expo Go (Android/iOS)
+
+4. To connect to the backend, update NGROK_URL in:
+     frontend/services/backendService.ts
+   Set it to your live ngrok URL, e.g.:
+     https://abc123.ngrok-free.app
+
+
+------------------------------------------------------------
+  FOLDER & FILE STRUCTURE
+------------------------------------------------------------
+
+frontend/
+│
+├── app/                        ← All screens (Expo Router)
+│   │
+│   ├── _layout.tsx             ← Root layout. Sets up navigation stack,
+│   │                             auth redirect logic, and font loading.
+│   │
+│   ├── index.tsx               ← Splash / entry screen shown on first
+│   │                             launch. Redirects to onboarding or home.
+│   │
+│   ├── permissions.tsx         ← Camera and notification permission
+│   │                             request screen.
+│   │
+│   ├── calibration.tsx         ← 15-second calibration screen where the
+│   │                             user holds front and side posture poses.
+│   │                             [TEAM 1: Integrate your ML model here]
+│   │
+│   ├── calibration-instructions.tsx
+│   │                           ← Instructions screen shown before
+│   │                             calibration starts.
+│   │
+│   ├── profile.tsx             ← User profile view screen.
+│   │
+│   ├── (tabs)/                 ← Bottom tab navigation screens
+│   │   ├── _layout.tsx         ← Defines the 4 bottom tabs and icons.
+│   │   ├── home.tsx            ← Dashboard: shows today's posture score,
+│   │   │                         pain risk from Team 2, recent sessions.
+│   │   ├── live.tsx            ← LIVE SESSION SCREEN (main integration point)
+│   │   │                         Start/Pause/End live posture monitoring.
+│   │   │                         On Start: session_id written to Neon DB.
+│   │   │                         On End: avg_fps, total_frames, status saved.
+│   │   │                         [TEAM 1: Hook your real-time model here]
+│   │   ├── reports.tsx         ← Reports screen: history of past sessions,
+│   │   │                         charts and score breakdown.
+│   │   └── settings.tsx        ← App settings: dark mode, sound alerts,
+│   │                             notification toggle, sign out.
+│   │
+│   ├── auth/
+│   │   ├── login.tsx           ← Sign In screen (email + password)
+│   │   ├── signin.tsx          ← Alternate sign-in entry point
+│   │   └── signup.tsx          ← Sign Up screen (name, email, password)
+│   │
+│   ├── onboarding/             ← Onboarding flow (shown on first launch)
+│   │   ├── welcome.tsx         ← Welcome intro slide
+│   │   ├── step1.tsx           ← Step 1: Enter age group and sitting hours
+│   │   ├── step2.tsx           ← Step 2: Enter height/weight (optional)
+│   │   └── step3.tsx           ← Step 3: Permission setup
+│   │
+│   └── profile/
+│       └── edit.tsx            ← Edit profile screen (age, height, weight)
+│
+│
+├── services/                   ← All API and device service logic
+│   │
+│   ├── backendService.ts       ← ★ MAIN API FILE ★
+│   │                             All calls to the FastAPI backend live here.
+│   │                             Exports:
+│   │                               apiSignUp(name, email, password)
+│   │                               apiSignIn(email, password)
+│   │                               apiCreateProfile(data)
+│   │                               apiGetProfile()
+│   │                               apiGetPainRisk()        ← Team 2 reads this
+│   │                               apiStartSession()       ← Creates DB row
+│   │                               apiEndSession(id, data) ← Updates DB row
+│   │                               saveToken / getToken / clearToken
+│   │                               validationService (local validation)
+│   │
+│   ├── cameraService.ts        ← Handles camera permissions and frame
+│   │                             capture polling. Calls postureAnalysis
+│   │                             service and triggers posture callbacks.
+│   │                             [TEAM 1: Replace mock logic here with
+│   │                              your real ML model output]
+│   │
+│   ├── postureAnalysisService.ts
+│   │                           ← Currently returns mock posture status
+│   │                             (good / warning / bad).
+│   │                             [TEAM 1: Replace this with your actual
+│   │                              angle/posture detection output]
+│   │
+│   ├── team2Service.ts         ← Service wrapper for Team 2 pain risk API.
+│   │                             Reads from /api/v1/team2/pain-risk/me
+│   │                             Team 2 must write to this endpoint.
+│   │
+│   ├── notificationService.ts  ← Sends local device notifications when
+│   │                             posture is bad or warning state.
+│   │
+│   └── firebaseService.ts      ← Firebase setup (currently unused,
+│                                  reserved for future push notifications)
+│
+│
+├── store/
+│   └── userStore.ts            ← Global state using Zustand.
+│                                 Stores: user auth, profile, sessions list,
+│                                 settings (dark mode, sound, notifications),
+│                                 today's posture stats, current posture status.
+│                                 All screens read/write state from here.
+│
+│
+├── constants/
+│   └── theme.ts                ← Light/dark theme color tokens used
+│                                 across all screens.
+│
+│
+├── assets/                     ← Images, fonts, and icons
+│
+├── components/                 ← Reusable UI components
+│   ├── common/                 ← Shared components (buttons, inputs)
+│   ├── posture/                ← Posture-specific UI components
+│   └── ui/                     ← Icon wrappers and themed components
+│
+├── hooks/                      ← Custom React hooks
+│
+│
+├── app.json                    ← Expo app configuration (name, icon, etc.)
+├── package.json                ← NPM dependencies
+├── tsconfig.json               ← TypeScript config
+├── TECH_STACK.md               ← Detailed tech stack documentation
+├── BACKEND_STACK.md            ← Backend API documentation
+└── TEAM_SETUP_INSTRUCTIONS.md  ← General setup instructions
+
+
+------------------------------------------------------------
+  INTEGRATION POINTS FOR TEAM 1 (Posture Detection)
+------------------------------------------------------------
+
+Your angle/posture detection output needs to plug into TWO files:
+
+1. frontend/services/postureAnalysisService.ts
+   - Currently has a MOCK function that returns random posture status.
+   - Replace the analyzePosture() function with your real model output.
+   - Must return: { status: 'good' | 'warning' | 'bad' }
+
+2. frontend/services/cameraService.ts
+   - Calls postureAnalysisService every 2 seconds.
+   - You can modify the frame capture rate (currently 2000ms).
+   - If you need raw frames, capture them in startMonitoring().
+
+The live session screen (app/(tabs)/live.tsx) listens to output from
+cameraService and updates the UI (status badge, alert sounds, etc.).
+
+Session data (session_id, start_time, etc.) is already being saved to
+the Neon database sessions table automatically on Start/End button.
+
+
+------------------------------------------------------------
+  INTEGRATION POINTS FOR TEAM 2 (Pain Risk Analysis)
+------------------------------------------------------------
+
+You will read user profile data and write pain risk results to our
+shared Neon PostgreSQL database.
+
+Backend API base URL:
+  https://<ngrok-url>/api/v1
+
+Endpoints for Team 2:
+
+  GET  /api/v1/team2/users
+       Returns list of all user profiles (user_id, age_group,
+       sitting_hours, height_cm, weight_kg)
+
+  GET  /api/v1/team2/users/{user_id}
+       Returns a single user profile
+
+  POST /api/v1/team2/pain-risk/{user_id}
+       Submit pain risk analysis result for a user.
+       Body format:
+         {
+           "session_id": "session_abc123",
+           "results": { ...per-metric data with risk_percent... },
+           "recommendation": {
+             "risk_level": "LOW|MODERATE|HIGH",
+             "dominant_issue": "neck bend",
+             "actions": ["Take breaks", "Stretch neck"]
+           }
+         }
+
+Our frontend (home.tsx) reads the latest pain risk result for the
+logged-in user from:
+  GET /api/v1/team2/pain-risk/me
+
+Sessions table (Neon DB) — for Team 2 to reference:
+  Table: sessions
+  Columns:
+    id              (int, auto)
+    user_id         (int, FK to users)
+    session_id      (varchar, unique)
+    start_time      (timestamp)
+    end_time        (timestamp, nullable)
+    current_phase   (varchar)
+    phase_start_time (timestamp)
+    expected_end_time (timestamp)
+    avg_fps         (double precision)
+    total_frames    (integer)
+    status          (varchar: 'active' | 'completed')
+
+
+------------------------------------------------------------
+  BACKEND API SUMMARY (for all teams)
+------------------------------------------------------------
+  Auth:
+    POST /api/v1/auth/signup
+    POST /api/v1/auth/signin
+    GET  /api/v1/auth/me
+
+  Profile:
+    POST /api/v1/profile/
+    PUT  /api/v1/profile/
+    GET  /api/v1/profile/
+
+  Sessions:
+    POST /api/v1/sessions/start   ← Creates session in DB
+    PUT  /api/v1/sessions/{id}/end ← Updates session stats
+    GET  /api/v1/sessions/        ← List all user sessions
+    GET  /api/v1/sessions/today   ← Today's summary stats
+
+  Team 2:
+    GET  /api/v1/team2/users
+    GET  /api/v1/team2/users/{user_id}
+    POST /api/v1/team2/pain-risk/{user_id}
+    GET  /api/v1/team2/pain-risk/me
+
+  API docs (Swagger): http://localhost:8001/docs
+                      or https://<ngrok-url>/docs
+
+
+============================================================
+  END OF INTEGRATION GUIDE
+============================================================
