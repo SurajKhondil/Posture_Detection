@@ -1,24 +1,47 @@
-==========================================
-      POSE ENGINE - RUN INSTRUCTIONS
-==========================================
+==========================================================
+      POSTURE COACH - RUN INSTRUCTIONS
+==========================================================
 
-Welcome! Follow these simple steps to run the application.
+Welcome! Follow these simple steps to set up and run the application.
+The project offers two launch configurations.
 
-1.  First Time Setup (Run Once):
-    ---------------------------
-    Double-click `setup.bat`.
-    - This will install the necessary Python and Flutter libraries.
-    - Wait for it to say "Setup Complete!".
+----------------------------------------------------------
+OPTION A: Stand-alone Pose Engine App (Recommended)
+----------------------------------------------------------
+This launches the local React Native app communicating directly with 
+the MediaPipe WebSocket server.
 
-2.  Run the App:
-    ------------
-    Double-click `run.bat`.
-    - This will open a backend server window (don't close it!).
-    - Then it will launch the Pose Engine application.
+1. First-Time Setup (Run Once):
+   - Double-click `setup_rn.bat`.
+   - This installs Node/NPM dependencies for the React Native app.
+   - Wait until the console output reports setup is complete.
 
-3.  Closing:
-    --------
-    - Close the application window.
-    - Close the black backend server window.
+2. Launch the Application:
+   - Double-click `run_rn.bat`.
+   - This starts the MediaPipe WebSocket server in a separate window.
+   - It then initializes the Expo development console.
+   - Scan the displayed QR code with your Expo Go mobile application.
 
-Enjoy!
+----------------------------------------------------------
+OPTION B: Full Posture Coach Platform (Integrated)
+----------------------------------------------------------
+This starts the complete team environment including FastAPI web endpoints,
+user accounts, Neon PG DB, calibration screens, and pain risk dashboards.
+
+1. Setup:
+   - Make sure you run setup for the backend and frontend separately:
+     cd posture-coach-team-copy/backend && pip install -r requirements.txt
+     cd posture-coach-team-copy/frontend && npm install
+
+2. Launch All Servers:
+   - Double-click `start.bat`.
+   - This spins up the MediaPipe Server, the FastAPI Backend, and the Expo Frontend.
+   - Scan the QR code in the Expo window.
+
+----------------------------------------------------------
+Closing/Stopping:
+----------------------------------------------------------
+- Press Ctrl+C in the active server terminals.
+- Close any spawned background command prompt windows.
+
+Enjoy! 🎉

@@ -32,7 +32,10 @@ team3_engine = None
 team3_raw_angles_table = None
 
 if _t3_url:
-    # Team 3 backend uses psycopg2 — keep plain postgresql:// prefix
+    # Team 3 backend uses psycopg2 but we have psycopg3 installed — update scheme
+    if _t3_url.startswith("postgresql://"):
+        _t3_url = _t3_url.replace("postgresql://", "postgresql+psycopg://", 1)
+        
     team3_engine = create_engine(
         _t3_url, echo=False, pool_pre_ping=True,
         connect_args={"sslmode": "require"}

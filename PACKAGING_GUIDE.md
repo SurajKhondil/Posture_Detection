@@ -1,40 +1,52 @@
-# Packaging Guide for Pose Engine
+# Packaging Guide for Posture Coach Project
 
-Follow these steps to zip your source code for sharing.
+Follow these steps to clean and compress your source code before sharing or archiving.
 
-## 1. Clean the Project (Recommended)
-Before zipping, it's best to remove large build files.
-Open a terminal in `pose_engine` and run:
-```powershell
-flutter clean
-```
-*(Note: This deletes the `build/` folder, saving a lot of space. The recipient will rebuild it when they run `setup.bat` or `run.bat`.)*
+---
 
-## 2. What to Zip
-Select the following files and folders in your `pose_engine` directory:
+## 1. Clean the Project (Highly Recommended)
+To minimize package size, delete auto-generated dependencies and cache files. They will be re-installed by the recipient during setup.
 
-*   **Folders**:
-    *   `lib/`
-    *   `python_backend/`
-    *   `windows/`
-    *   `test/` (optional)
-*   **Files**:
-    *   `pubspec.yaml`
-    *   `analysis_options.yaml`
-    *   `README.md`
-    *   `setup.bat` (The new script)
-    *   `run.bat` (The new script)
-    *   `INSTRUCTIONS.txt` (The new instructions)
-    *   `PACKAGING_GUIDE.md` (This file)
+### Remove Node Modules & Expo Caches:
+Delete the following folders in your workspace:
+- `react-native-app/node_modules/`
+- `react-native-app/.expo/`
+- `posture-coach-team-copy/frontend/node_modules/`
+- `posture-coach-team-copy/frontend/.expo/`
 
-## 3. What NOT to Zip
-**Do NOT** include these folders (they are large and auto-generated):
-*   `build/`
-*   `.dart_tool/`
-*   `.git/` (if present)
-*   `.idea/`
-*   `build_log.txt` or other log files.
+### Remove Python Caches & Virtual Envs:
+Delete the following folders:
+- `posture-coach-team-copy/backend/venv/`
+- `**/__pycache__/` (all nested pycache directories)
+- `python_backend/pose_data.db` (optional: local SQLite test database)
 
-## 4. Final Step
-Right-click your selection -> **Send to** -> **Compressed (zipped) folder**.
-Name it `pose_engine_dist.zip`.
+---
+
+## 2. What to Include in the Archive
+Select the following files and folders from the root directory:
+
+* **Folders**:
+  - `react-native-app/` (excluding `node_modules` and `.expo`)
+  - `python_backend/` (excluding `__pycache__` and local `.db` files)
+  - `posture-coach-team-copy/` (excluding frontend `node_modules` and backend `venv`)
+  - `docs/` (contains screenshots for README)
+
+* **Files**:
+  - `.gitignore`
+  - `README.md` (Main repository profile)
+  - `README_RUN.md` (Manual running guide)
+  - `INSTRUCTIONS.txt` (Quick running instructions)
+  - `PACKAGING_GUIDE.md` (This document)
+  - `setup_rn.bat`
+  - `run_rn.bat`
+  - `start.bat`
+  - `start.py`
+
+---
+
+## 3. Final Step
+1. Right-click the selected files and folders.
+2. Select **Compress to ZIP file** (or **Send to** -> **Compressed (zipped) folder**).
+3. Name the resulting archive: `posture_coach_source.zip`.
+
+This ensures a clean, lightweight archive (typically under 10MB) that can be unpacked and set up instantly using the automated setup scripts.

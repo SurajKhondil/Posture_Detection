@@ -324,49 +324,34 @@ class PoseServer:
                         if client_state.get("is_paused", False) or client_state.get("session_id") is None:
                             continue
                             
-                        import database
-                        database.init_database()  # Ensure tables exist
-                        
                         payload = data.get("payload", {})
                         if payload:
                             try:
-                                with database.get_connection() as conn:
-                                    frame_id = payload.get("scan_id", "frame_0").replace("frame_", "")
-                                    camera_angle = payload.get("camera_angle", "FRONT")
-                                    is_calibrated = payload.get("is_calibrated", True)
-                                    data_obj = payload.get("data", {})
-                                    
-                                    angle_data = {}
-                                    confidence_data = {}
-                                    
-                                    for k, v in data_obj.items():
-                                        if k.endswith("_degree") or k.endswith("_index"):
-                                            base = k.replace("_degree", "").replace("_index", "")
-                                            angle_data[base] = v
-                                        elif k.endswith("_confidence"):
-                                            base = k.replace("_confidence", "")
-                                            confidence_data[base] = v
+                                frame_id = payload.get("scan_id", "frame_0").replace("frame_", "")
+                                camera_angle = payload.get("camera_angle", "FRONT")
+                                is_calibrated = payload.get("is_calibrated", True)
+                                data_obj = payload.get("data", {})
+                                
+                                angle_data = {}
+                                confidence_data = {}
+                                
+                                for k, v in data_obj.items():
+                                    if k.endswith("_degree") or k.endswith("_index"):
+                                        base = k.replace("_degree", "").replace("_index", "")
+                                        angle_data[base] = v
+                                    elif k.endswith("_confidence"):
+                                        base = k.replace("_confidence", "")
+                                        confidence_data[base] = v
 
-                                    timestamp_ms = float(frame_id) if frame_id.isdigit() else 0.0
-                                    
-                                    import datetime as dt
-                                    ist_tz = dt.timezone(dt.timedelta(hours=5, minutes=30))
-                                    iso_str = dt.datetime.fromtimestamp(timestamp_ms / 1000.0, tz=ist_tz).isoformat()
-                                    
-                                    stmt = database.raw_angles_table.insert().values(
-                                        session_id=client_state.get("session_id", 1),
-                                        frame_id=int(timestamp_ms),
-                                        camera_angle=camera_angle,
-                                        angle_data=angle_data,
-                                        confidence_data=confidence_data,
-                                        is_calibrated=is_calibrated,
-                                        fps_at_frame=30.0,
-                                        timestamp_iso=iso_str,
-                                        timestamp_ms=timestamp_ms
-                                    )
-                                    conn.execute(stmt)
-                                    conn.commit()
-                                    # ── Mirror same row to Team 3's Neon DB ──
+                                timestamp_ms = float(frame_id) if frame_id.isdigit() else 0.0
+                                
+                                import datetime as dt
+                                ist_tz = dt.timezone(dt.timedelta(hours=5, minutes=30))
+                                iso_str = dt.datetime.fromtimestamp(timestamp_ms / 1000.0, tz=ist_tz).isoformat()
+                                
+                                def _do_db_writes():
+                                    import database
+                                    database.init_database()
                                     row = dict(
                                         session_id=client_state.get("session_id", 1),
                                         frame_id=int(timestamp_ms),
@@ -378,8 +363,13 @@ class PoseServer:
                                         timestamp_iso=iso_str,
                                         timestamp_ms=timestamp_ms
                                     )
+                                    with database.get_connection() as conn:
+                                        conn.execute(database.raw_angles_table.insert().values(**row))
+                                        conn.commit()
                                     database.mirror_to_team3(row)
-                                    # print(f"💾 Raw angles saved to DB: {camera_angle}")
+                                # Run DB writes in background thread — never blocks the WS event loop
+                                loop = asyncio.get_event_loop()
+                                loop.run_in_executor(None, _do_db_writes)
                             except Exception as e:
                                 print(f"❌ DB Insert Error: {e}")
                                 

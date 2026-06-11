@@ -120,14 +120,22 @@ export default function LiveSessionScreen() {
     } catch { }
   };
 
+  const lastFrameTimeRef = useRef(Date.now());
+
   const handlePostureData = (data: PostureData) => {
     const { notificationsEnabled: notify, soundEnabled: soundOn, todayAlerts: alertsNow, todayGoodTime: goodMinNow } = settingsRef.current;
     
     updatePostureStatus(data.status);
     setTotalFrames(prev => prev + 1);
 
+    const now = Date.now();
+    const deltaMs = now - lastFrameTimeRef.current;
+    lastFrameTimeRef.current = now;
+    // Cap deltaMs to 1 second to prevent big jumps if app is paused
+    const deltaSecs = Math.min(deltaMs / 1000, 1);
+
     if (data.status === 'good') {
-      goodPostureTimeRef.current += Math.max(1, alertFrequency); // Increment by frequency seconds
+      goodPostureTimeRef.current += deltaSecs;
       updateTodayStats({ goodTime: Math.floor(goodMinNow + (goodPostureTimeRef.current / 60)) });
     }
 
@@ -183,6 +191,8 @@ export default function LiveSessionScreen() {
     }
 
     setTotalFrames(0);
+    // Reset timer and other variables
+    lastFrameTimeRef.current = Date.now();
     cameraService.startMonitoring(handlePostureData, alertFrequency * 1000);
     goodPostureTimeRef.current = 0;
     sessionAlertsRef.current = 0; // Reset for new session
@@ -199,9 +209,18 @@ export default function LiveSessionScreen() {
   const handleEnd = async () => {
     const avgFps = sessionTime > 0 ? totalFrames / sessionTime : 0;
 
+    // ── ALWAYS reset UI first so End button never appears frozen ──
+    cameraService.stopMonitoring();
+    poseDetectorService.stopSession();
+    setIsActive(false); setIsPaused(false); setSessionTime(0);
+    setSessionId(null); setTotalFrames(0);
+    goodPostureTimeRef.current = 0;
+    updatePostureStatus('good');
+    voiceService.speak("Monitoring ended.");
+
+    // ── Then persist session result to backend in background ──
     if (sessionId) {
       try {
-        // End session and save ONLY this session's alerts + good posture time to DB
         await apiStopTeam2Frames(sessionId, {
           alerts_count: sessionAlertsRef.current,
           good_time_seconds: goodPostureTimeRef.current,
@@ -223,17 +242,10 @@ export default function LiveSessionScreen() {
         alerts: sessionAlertsRef.current,
       });
     }
-
-    cameraService.stopMonitoring();
-    setIsActive(false); setIsPaused(false); setSessionTime(0);
-    setSessionId(null); setTotalFrames(0);
-    goodPostureTimeRef.current = 0;
-    updatePostureStatus('good');
-    voiceService.speak("Monitoring ended.");
   };
 
   const goodPct = sessionTime > 0
-    ? Math.round((goodPostureTimeRef.current / sessionTime) * 100)
+    ? Math.min(100, Math.round((goodPostureTimeRef.current / sessionTime) * 100))
     : 0;
 
   const statusColor = STATUS_COLORS[currentPostureStatus];

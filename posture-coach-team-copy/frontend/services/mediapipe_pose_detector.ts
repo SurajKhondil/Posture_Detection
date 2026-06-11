@@ -56,6 +56,13 @@ export class MediaPipePoseDetector {
                 console.log('🔌 WebSocket connection closed');
                 this._isReady = false;
                 setConnectionStatus(false, 'Connection closed');
+                // Auto-reconnect after 2 seconds so sessions can resume
+                setTimeout(() => {
+                    if (!this._isReady) {
+                        console.log('🔄 Auto-reconnecting to MediaPipe server...');
+                        this.initialize().catch(() => {});
+                    }
+                }, 2000);
             };
         } catch (e: any) {
             console.log('❌ Failed to connect to MediaPipe server:', e);
@@ -154,7 +161,7 @@ export class MediaPipePoseDetector {
     }
 
     stopSession() {
-        if (!this._isReady) return;
+        // Always attempt stop even if WebSocket just closed
         this.sendCommand({ command: 'stop' });
     }
 
